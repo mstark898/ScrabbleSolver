@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  /* NYT Crossplay inspired palette */
+  --board-bg: #1a6b3c;
+  --board-border: #145530;
+  --cell-bg: #d4c5a9;
+  --cell-border: #b8a88a;
+  --cell-empty: #c8b894;
+
+  /* Premium square colors */
+  --tw: #f5c242;
+  --dw: #e88b8b;
+  --tl: #5b9bd5;
+  --dl: #7ec8e3;
+  --star: #e88b8b;
+
+  /* Tile colors */
+  --tile-bg: #f5e6c8;
+  --tile-border: #c9a96e;
+  --tile-text: #2c2c2c;
+  --tile-points: #5a5a5a;
+
+  /* UI colors */
+  --bg-primary: #faf8f5;
+  --bg-secondary: #f0ece4;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b6b6b;
+  --accent: #2c7a4b;
+  --accent-hover: #236b3e;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
