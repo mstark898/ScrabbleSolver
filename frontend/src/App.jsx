@@ -224,19 +224,19 @@ function App() {
   }, [selectedCell, placeLetter, removeLetter, boardTiles, clearPreview]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-6 px-4">
+    <div className="min-h-screen flex flex-col items-center py-4 px-3 sm:py-6 sm:px-4">
       {/* Header */}
-      <header className="mb-6 text-center">
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[--text-primary]">
-          Scrabble Solver
+      <header className="mb-4 text-center">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[--text-primary]">
+          Crossplay Solver
         </h1>
-        <p className="text-sm text-[--text-secondary] mt-1">
-          Recreate the board state, enter your hand, find the best move
+        <p className="text-xs text-[--text-secondary] mt-0.5">
+          Enter the board &amp; your tiles, find the best move
         </p>
       </header>
 
       {/* Main layout */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start justify-center w-full max-w-6xl">
+      <div className="flex flex-col lg:flex-row gap-5 items-start justify-center w-full max-w-5xl">
         {/* Left: Board */}
         <div className="flex-shrink-0">
           <Board
@@ -244,25 +244,20 @@ function App() {
             selectedCell={selectedCell}
             onCellClick={handleCellClick}
           />
-          <div className="flex items-center justify-between mt-2 px-1">
-            <p className="text-xs text-[--text-secondary]">
-              Click cell, type to place &middot; Space toggles
-              <span className="ml-1 px-1.5 py-0.5 rounded bg-[--bg-secondary] font-semibold">
-                {direction === 'across' ? '\u2192 Across' : '\u2193 Down'}
-              </span>
-            </p>
+          <div className="mt-1.5 px-0.5 flex items-center gap-2">
+            <span className="text-[0.65rem] text-[--text-secondary]">
+              Click cell &amp; type &middot; Space toggles direction
+            </span>
+            <span className="text-[0.65rem] px-1.5 py-0.5 rounded bg-[--bg-secondary] font-semibold text-[--text-primary]">
+              {direction === 'across' ? '\u2192 Across' : '\u2193 Down'}
+            </span>
           </div>
         </div>
 
         {/* Right: Controls panel */}
-        <div className="flex flex-col items-center gap-5 w-full lg:w-80">
-          {/* Hand */}
-          <TileRack
-            tiles={handTiles}
-            onTilesChange={setHandTiles}
-          />
+        <div className="flex flex-col gap-4 w-full lg:w-72">
+          <TileRack tiles={handTiles} onTilesChange={setHandTiles} />
 
-          {/* Solve + Reset */}
           <Controls
             onSolve={handleSolve}
             onClearBoard={handleClearBoard}
@@ -271,19 +266,17 @@ function App() {
           />
 
           {error && (
-            <div className="w-full max-w-md px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div className="px-3 py-2 rounded bg-red-50 border border-red-200 text-red-700 text-xs">
               {error}
             </div>
           )}
 
-          {/* Results */}
           <Results
             results={results}
             onSelectResult={handleSelectResult}
             activeResult={activeResult}
           />
 
-          {/* Unseen tiles */}
           <UnseenTiles
             unseenCounts={unseenCounts}
             totalUnseen={totalUnseen}

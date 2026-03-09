@@ -8,10 +8,11 @@ import (
 
 const BoardSize = 15
 
+// Words With Friends / Crossplay tile scores
 var TileScores = map[byte]int{
-	'A': 1, 'B': 3, 'C': 3, 'D': 2, 'E': 1, 'F': 4, 'G': 2, 'H': 4, 'I': 1,
-	'J': 8, 'K': 5, 'L': 1, 'M': 3, 'N': 1, 'O': 1, 'P': 3, 'Q': 10, 'R': 1,
-	'S': 1, 'T': 1, 'U': 1, 'V': 4, 'W': 4, 'X': 8, 'Y': 4, 'Z': 10,
+	'A': 1, 'B': 4, 'C': 4, 'D': 2, 'E': 1, 'F': 4, 'G': 3, 'H': 3, 'I': 1,
+	'J': 10, 'K': 5, 'L': 2, 'M': 4, 'N': 2, 'O': 1, 'P': 4, 'Q': 10, 'R': 1,
+	'S': 1, 'T': 1, 'U': 2, 'V': 5, 'W': 4, 'X': 8, 'Y': 3, 'Z': 10,
 }
 
 // Premium square types
@@ -25,21 +26,24 @@ const (
 	TW
 )
 
-// Standard Scrabble board premium layout
+// Words With Friends / Crossplay board premium layout
 var BoardLayout [BoardSize][BoardSize]Premium
 
 func init() {
 	// Triple word scores
-	tw := [][2]int{{0, 0}, {0, 7}, {0, 14}, {7, 0}, {7, 14}, {14, 0}, {14, 7}, {14, 14}}
+	tw := [][2]int{
+		{0, 3}, {0, 11}, {3, 0}, {3, 14},
+		{11, 0}, {11, 14}, {14, 3}, {14, 11},
+	}
 	for _, p := range tw {
 		BoardLayout[p[0]][p[1]] = TW
 	}
 
 	// Double word scores
 	dw := [][2]int{
-		{1, 1}, {1, 13}, {2, 2}, {2, 12}, {3, 3}, {3, 11}, {4, 4}, {4, 10},
-		{10, 4}, {10, 10}, {11, 3}, {11, 11}, {12, 2}, {12, 12}, {13, 1}, {13, 13},
-		{7, 7}, // center star
+		{1, 5}, {1, 9}, {3, 7}, {5, 1}, {5, 13},
+		{7, 3}, {7, 11},
+		{9, 1}, {9, 13}, {11, 7}, {13, 5}, {13, 9},
 	}
 	for _, p := range dw {
 		BoardLayout[p[0]][p[1]] = DW
@@ -47,8 +51,10 @@ func init() {
 
 	// Triple letter scores
 	tl := [][2]int{
-		{1, 5}, {1, 9}, {5, 1}, {5, 5}, {5, 9}, {5, 13},
-		{9, 1}, {9, 5}, {9, 9}, {9, 13}, {13, 5}, {13, 9},
+		{0, 6}, {0, 8}, {3, 3}, {3, 11},
+		{5, 5}, {5, 9}, {6, 0}, {6, 14},
+		{8, 0}, {8, 14}, {9, 5}, {9, 9},
+		{11, 3}, {11, 11}, {14, 6}, {14, 8},
 	}
 	for _, p := range tl {
 		BoardLayout[p[0]][p[1]] = TL
@@ -56,11 +62,12 @@ func init() {
 
 	// Double letter scores
 	dl := [][2]int{
-		{0, 3}, {0, 11}, {2, 6}, {2, 8}, {3, 0}, {3, 7}, {3, 14},
-		{6, 2}, {6, 6}, {6, 8}, {6, 12},
-		{7, 3}, {7, 11},
-		{8, 2}, {8, 6}, {8, 8}, {8, 12},
-		{11, 0}, {11, 7}, {11, 14}, {12, 6}, {12, 8}, {14, 3}, {14, 11},
+		{1, 2}, {1, 12}, {2, 1}, {2, 4}, {2, 10}, {2, 13},
+		{4, 2}, {4, 6}, {4, 8}, {4, 12},
+		{6, 4}, {6, 10},
+		{8, 4}, {8, 10},
+		{10, 2}, {10, 6}, {10, 8}, {10, 12},
+		{12, 1}, {12, 4}, {12, 10}, {12, 13}, {13, 2}, {13, 12},
 	}
 	for _, p := range dl {
 		BoardLayout[p[0]][p[1]] = DL
@@ -485,9 +492,9 @@ func (s *Solver) scoreMove(board Board, word []byte, startR, startC int, across 
 
 	total := mainWordScore*wordMultiplier + crossWordScores
 
-	// Bingo bonus: 50 points for using all 7 tiles
+	// Bingo bonus: 35 points for using all 7 tiles (Words With Friends rule)
 	if tilesPlaced == 7 {
-		total += 50
+		total += 35
 	}
 
 	return total
