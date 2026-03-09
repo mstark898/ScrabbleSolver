@@ -1,10 +1,10 @@
 import { BOARD_LAYOUT, PREMIUM_LABELS, TILE_SCORES } from '../utils/constants';
 
 const PREMIUM_COLORS = {
-  TW: { bg: '#ff6b6b', text: '#fff' },
-  DW: { bg: '#ff9f43', text: '#fff' },
-  TL: { bg: '#54a0ff', text: '#fff' },
-  DL: { bg: '#5ec4b6', text: '#fff' },
+  TW: { bg: '#d4a0a0', text: '#8b4040' },
+  DW: { bg: '#c4b8d4', text: '#6b5080' },
+  TL: { bg: '#b8c8a0', text: '#5a6e3a' },
+  DL: { bg: '#c8d8e8', text: '#5a7a9a' },
 };
 
 export default function Cell({ row, col, tile, isSelected, onClick }) {
@@ -24,9 +24,9 @@ export default function Cell({ row, col, tile, isSelected, onClick }) {
           rounded-sm cursor-pointer select-none transition-all duration-100
           ${isPreview
             ? 'bg-[#c8e6c9] border-2 border-[#43a047]'
-            : 'bg-[#f5e6c8] border border-[#d4b87a]'
+            : 'bg-[#f5e6c8] border border-[#d4b87a] shadow-sm'
           }
-          ${isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-[#2d5016]' : ''}
+          ${isSelected ? 'ring-2 ring-[#4a90d9] ring-offset-1' : ''}
         `}
       >
         <span className={`
@@ -62,19 +62,19 @@ export default function Cell({ row, col, tile, isSelected, onClick }) {
         ${premiumInfo
           ? ''
           : isCenter
-            ? 'bg-[#5a8f3d] border border-[#4a7a30]'
-            : 'bg-[#3d7a2a] border border-[#346b22]/60'
+            ? 'bg-[#2c2c2c]'
+            : 'bg-[#e8e4dc] border border-[#d8d4cc]'
         }
-        ${isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-[#2d5016]' : ''}
-        hover:brightness-110
+        ${isSelected ? 'ring-2 ring-[#4a90d9] ring-offset-1' : ''}
+        hover:brightness-95
       `}
     >
       {label ? (
-        <span className="text-[min(0.5rem,1.4vw)] font-extrabold leading-none opacity-90">
+        <span className="text-[min(0.5rem,1.4vw)] font-extrabold leading-none opacity-80">
           {label}
         </span>
       ) : isCenter ? (
-        <span className="text-[min(0.9rem,2.4vw)] leading-none text-white/70">+</span>
+        <span className="text-[min(0.9rem,2.4vw)] leading-none text-white">★</span>
       ) : null}
     </button>
   );

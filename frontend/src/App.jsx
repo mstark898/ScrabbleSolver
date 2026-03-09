@@ -224,19 +224,37 @@ function App() {
   }, [selectedCell, placeLetter, removeLetter, boardTiles, clearPreview]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-4 px-3 sm:py-6 sm:px-4">
-      {/* Header */}
-      <header className="mb-4 text-center">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[--text-primary]">
-          Crossplay Solver
-        </h1>
-        <p className="text-xs text-[--text-secondary] mt-0.5">
-          Enter the board &amp; your tiles, find the best move
-        </p>
-      </header>
+    <div className="min-h-screen flex flex-col py-4 px-3 sm:py-6 sm:px-4">
+      {/* Top bar: Save/Clear left, Practice mode right */}
+      <div className="flex items-center justify-between w-full max-w-5xl mx-auto mb-4">
+        <div className="flex items-center gap-2">
+          <button
+            className="px-4 py-2 rounded-full bg-[#3d7a2a] text-white font-semibold text-sm
+              hover:bg-[#346b22] active:scale-[0.98] transition-all duration-100
+              flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+            Save
+          </button>
+          <button
+            onClick={handleClearBoard}
+            className="px-4 py-2 rounded-full bg-white border border-[#ddd] text-sm
+              font-semibold text-[--text-primary] hover:bg-[--bg-secondary]
+              active:scale-[0.98] transition-all duration-100
+              flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Clear
+          </button>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-[--text-primary] cursor-pointer select-none">
+          <input type="checkbox" className="w-4 h-4 accent-[#3d7a2a]" />
+          Practice mode
+        </label>
+      </div>
 
       {/* Main layout */}
-      <div className="flex flex-col lg:flex-row gap-5 items-start justify-center w-full max-w-5xl">
+      <div className="flex flex-col lg:flex-row gap-5 items-start justify-center w-full max-w-5xl mx-auto">
         {/* Left: Board */}
         <div className="flex-shrink-0">
           <Board
@@ -255,12 +273,11 @@ function App() {
         </div>
 
         {/* Right: Controls panel */}
-        <div className="flex flex-col gap-4 w-full lg:w-72">
+        <div className="flex flex-col gap-4 w-full lg:w-80">
           <TileRack tiles={handTiles} onTilesChange={setHandTiles} />
 
           <Controls
             onSolve={handleSolve}
-            onClearBoard={handleClearBoard}
             solving={solving}
             hasHand={handTiles.length > 0}
           />
@@ -276,12 +293,15 @@ function App() {
             onSelectResult={handleSelectResult}
             activeResult={activeResult}
           />
-
-          <UnseenTiles
-            unseenCounts={unseenCounts}
-            totalUnseen={totalUnseen}
-          />
         </div>
+      </div>
+
+      {/* Bottom: Unseen tiles */}
+      <div className="w-full max-w-5xl mx-auto mt-5">
+        <UnseenTiles
+          unseenCounts={unseenCounts}
+          totalUnseen={totalUnseen}
+        />
       </div>
     </div>
   );
