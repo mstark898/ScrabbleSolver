@@ -9,20 +9,21 @@ const PREMIUM_STYLES = {
   '.': 'bg-[#d6c9a8]',
 };
 
-export default function Cell({ row, col, tile, isNew, isSelected, onClick }) {
+export default function Cell({ row, col, tile, isSelected, onClick }) {
   const premium = BOARD_LAYOUT[row][col];
 
   if (tile) {
     const letter = tile.letter;
     const isBlank = tile.isBlank;
+    const isPreview = tile.isPreview;
     return (
       <button
         onClick={onClick}
         className={`
           relative w-full aspect-square flex items-center justify-center
           rounded-[3px] cursor-pointer select-none transition-all duration-150
-          ${isNew
-            ? 'bg-[#f5e0b0] border-2 border-[#d4a843] shadow-[0_2px_8px_rgba(212,168,67,0.4)]'
+          ${isPreview
+            ? 'bg-[#dff0e5] border-2 border-[#2c7a4b] shadow-[0_2px_8px_rgba(44,122,75,0.3)]'
             : 'bg-[#f2e4c6] border border-[#c9a96e] shadow-[0_1px_3px_rgba(0,0,0,0.15)]'
           }
           ${isSelected ? 'ring-2 ring-[#2c7a4b] ring-offset-1' : ''}
@@ -31,13 +32,13 @@ export default function Cell({ row, col, tile, isNew, isSelected, onClick }) {
       >
         <span className={`
           font-bold leading-none
-          ${isBlank ? 'text-[#888]' : 'text-[#2c2c2c]'}
+          ${isBlank ? 'text-[#888] italic' : isPreview ? 'text-[#2c7a4b]' : 'text-[#2c2c2c]'}
           text-[min(1.4rem,3.5vw)]
         `}>
           {letter}
         </span>
-        {letter !== '?' && (
-          <span className="absolute bottom-[2px] right-[3px] text-[min(0.5rem,1.5vw)] font-semibold text-[#5a5a5a]">
+        {!isBlank && (
+          <span className={`absolute bottom-[2px] right-[3px] text-[min(0.5rem,1.5vw)] font-semibold ${isPreview ? 'text-[#2c7a4b]/60' : 'text-[#5a5a5a]'}`}>
             {TILE_SCORES[letter] ?? ''}
           </span>
         )}
