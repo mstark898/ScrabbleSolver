@@ -1,220 +1,227 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import Board from './components/Board';
 import TileRack from './components/TileRack';
 import Controls from './components/Controls';
 import Results from './components/Results';
-import { createEmptyBoard } from './utils/constants';
+import UnseenTiles from './components/UnseenTiles';
+import { createEmptyBoard, computeUnseen, totalTileCount } from './utils/constants';
 import { solveMoves } from './utils/api';
 
 function App() {
   const [boardTiles, setBoardTiles] = useState(createEmptyBoard);
-  const [rackTiles, setRackTiles] = useState([]);
-  const [rackInput, setRackInput] = useState('');
-  const [newTiles, setNewTiles] = useState(new Set());
+  const [handTiles, setHandTiles] = useState([]);
   const [selectedCell, setSelectedCell] = useState(null);
-  const [selectedTileIndex, setSelectedTileIndex] = useState(null);
   const [direction, setDirection] = useState('across');
   const [results, setResults] = useState([]);
+  const [activeResult, setActiveResult] = useState(null);
   const [solving, setSolving] = useState(false);
   const [error, setError] = useState(null);
+  // Preview tiles placed by selecting a result
+  const [previewTiles, setPreviewTiles] = useState(new Set());
 
-  const handleSetRack = useCallback(() => {
-    const letters = rackInput.replace(/[^A-Z?]/g, '').split('').slice(0, 7);
-    setRackTiles(letters);
-    setSelectedTileIndex(null);
-  }, [rackInput]);
+  // Compute unseen tiles
+  const unseenCounts = useMemo(
+    () => computeUnseen(boardTiles, handTiles),
+    [boardTiles, handTiles]
+  );
+  const totalUnseen = useMemo(() => totalTileCount(unseenCounts), [unseenCounts]);
 
+  // Click a cell to select it
   const handleCellClick = useCallback((row, col) => {
-    if (selectedTileIndex !== null && rackTiles[selectedTileIndex]) {
-      // Place tile on board
+    // If clicking the already-selected cell, toggle direction
+    if (selectedCell && selectedCell[0] === row && selectedCell[1] === col) {
+      setDirection(d => d === 'across' ? 'down' : 'across');
+    } else {
+      setSelectedCell([row, col]);
+    }
+  }, [selectedCell]);
+
+  const clearPreview = useCallback(() => {
+    if (previewTiles.size > 0) {
       setBoardTiles(prev => {
         const next = prev.map(r => [...r]);
-        next[row][col] = { letter: rackTiles[selectedTileIndex], isBlank: rackTiles[selectedTileIndex] === '?' };
+        for (const key of previewTiles) {
+          const [r, c] = key.split('-').map(Number);
+          next[r][c] = null;
+        }
         return next;
       });
-      setNewTiles(prev => {
-        const next = new Set(prev);
-        next.add(`${row}-${col}`);
-        return next;
-      });
+      setPreviewTiles(new Set());
+      setActiveResult(null);
+    }
+  }, [previewTiles]);
 
-      // Remove tile from rack
-      setRackTiles(prev => prev.filter((_, i) => i !== selectedTileIndex));
-      setSelectedTileIndex(null);
+  // Place a letter on the board at the selected cell
+  const placeLetter = useCallback((letter, isBlank = false) => {
+    if (!selectedCell) return;
+    const [row, col] = selectedCell;
 
-      // Auto-advance selection
-      if (direction === 'across' && col < 14) {
-        setSelectedCell([row, col + 1]);
-      } else if (direction === 'down' && row < 14) {
-        setSelectedCell([row + 1, col]);
-      } else {
-        setSelectedCell(null);
-      }
-    } else if (boardTiles[row][col] && newTiles.has(`${row}-${col}`)) {
-      // Pick up a placed tile
-      const tile = boardTiles[row][col];
+    // Clear any preview
+    clearPreview();
+
+    setBoardTiles(prev => {
+      const next = prev.map(r => [...r]);
+      next[row][col] = { letter: letter.toUpperCase(), isBlank };
+      return next;
+    });
+
+    // Auto-advance cursor
+    if (direction === 'across' && col < 14) {
+      setSelectedCell([row, col + 1]);
+    } else if (direction === 'down' && row < 14) {
+      setSelectedCell([row + 1, col]);
+    }
+  }, [selectedCell, direction, clearPreview]);
+
+  // Remove letter from board at selected cell
+  const removeLetter = useCallback(() => {
+    if (!selectedCell) return;
+    const [row, col] = selectedCell;
+
+    clearPreview();
+
+    // Clear the current cell if it has a tile
+    if (boardTiles[row][col]) {
       setBoardTiles(prev => {
         const next = prev.map(r => [...r]);
         next[row][col] = null;
         return next;
       });
-      setNewTiles(prev => {
-        const next = new Set(prev);
-        next.delete(`${row}-${col}`);
-        return next;
-      });
-      setRackTiles(prev => [...prev, tile.letter]);
     } else {
-      setSelectedCell([row, col]);
-    }
-  }, [selectedTileIndex, rackTiles, boardTiles, newTiles, direction]);
-
-  const handleTileClick = useCallback((idx) => {
-    setSelectedTileIndex(prev => prev === idx ? null : idx);
-  }, []);
-
-  const handleClearPlaced = useCallback(() => {
-    const returned = [];
-    setBoardTiles(prev => {
-      const next = prev.map(r => [...r]);
-      for (const key of newTiles) {
-        const [row, col] = key.split('-').map(Number);
-        if (next[row][col]) {
-          returned.push(next[row][col].letter);
-          next[row][col] = null;
-        }
+      // Move back and delete
+      let prevR = row, prevC = col;
+      if (direction === 'across' && col > 0) {
+        prevC = col - 1;
+      } else if (direction === 'down' && row > 0) {
+        prevR = row - 1;
       }
-      return next;
-    });
-    setRackTiles(prev => [...prev, ...returned]);
-    setNewTiles(new Set());
-    setSelectedCell(null);
-    setSelectedTileIndex(null);
-  }, [newTiles]);
+      if (prevR !== row || prevC !== col) {
+        setBoardTiles(prev => {
+          const next = prev.map(r => [...r]);
+          next[prevR][prevC] = null;
+          return next;
+        });
+        setSelectedCell([prevR, prevC]);
+      }
+    }
+  }, [selectedCell, boardTiles, direction, clearPreview]);
 
   const handleClearBoard = useCallback(() => {
     setBoardTiles(createEmptyBoard());
-    setNewTiles(new Set());
+    setHandTiles([]);
     setResults([]);
+    setActiveResult(null);
+    setPreviewTiles(new Set());
     setSelectedCell(null);
-    setSelectedTileIndex(null);
-    // Return all tiles from new placements to rack
-    setRackTiles(prev => {
-      const input = rackInput.replace(/[^A-Z?]/g, '').split('').slice(0, 7);
-      return input;
-    });
-  }, [rackInput]);
+    setError(null);
+  }, []);
 
   const handleSolve = useCallback(async () => {
+    clearPreview();
     setSolving(true);
     setError(null);
+    setResults([]);
+    setActiveResult(null);
     try {
-      // Convert board to string format for API
       const boardData = boardTiles.map(row =>
         row.map(cell => cell ? cell.letter : '.')
       );
-      const rack = rackTiles.join('');
+      const rack = handTiles.join('');
       const data = await solveMoves(boardData, rack);
       setResults(data.moves || []);
+      if (!data.moves || data.moves.length === 0) {
+        setError('No valid moves found.');
+      }
     } catch (err) {
       setError(err.message);
       setResults([]);
     } finally {
       setSolving(false);
     }
-  }, [boardTiles, rackTiles]);
+  }, [boardTiles, handTiles, clearPreview]);
 
   const handleSelectResult = useCallback((result) => {
-    // Clear newly placed tiles first
-    handleClearPlaced();
-
-    // Place the result word on the board
+    // First, clear any existing preview
     setBoardTiles(prev => {
       const next = prev.map(r => [...r]);
-      const newKeys = new Set();
+      // Remove previous preview tiles
+      for (const key of previewTiles) {
+        const [r, c] = key.split('-').map(Number);
+        next[r][c] = null;
+      }
+      // Place the new result word, only for positions that are empty
+      const newPreview = new Set();
       for (let i = 0; i < result.word.length; i++) {
         const r = result.direction === 'across' ? result.row : result.row + i;
         const c = result.direction === 'across' ? result.col + i : result.col;
         if (!next[r][c]) {
-          next[r][c] = { letter: result.word[i], isBlank: false };
-          newKeys.add(`${r}-${c}`);
+          next[r][c] = { letter: result.word[i], isBlank: false, isPreview: true };
+          newPreview.add(`${r}-${c}`);
         }
       }
-      setNewTiles(newKeys);
+      setPreviewTiles(newPreview);
       return next;
     });
-  }, [handleClearPlaced]);
+    setActiveResult(result);
+  }, [previewTiles]);
 
-  // Keyboard support
+  // Keyboard: type letters into the board, backspace to remove, arrows to navigate
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Don't capture when typing in the hand input
       if (e.target.tagName === 'INPUT') return;
 
-      const letter = e.key.toUpperCase();
-      if (/^[A-Z]$/.test(letter) && selectedCell) {
-        const idx = rackTiles.findIndex(t => t === letter);
-        if (idx !== -1) {
-          setSelectedTileIndex(idx);
-          // Trigger placement
-          const [row, col] = selectedCell;
-          setBoardTiles(prev => {
-            const next = prev.map(r => [...r]);
-            next[row][col] = { letter, isBlank: false };
-            return next;
-          });
-          setNewTiles(prev => {
-            const next = new Set(prev);
-            next.add(`${row}-${col}`);
-            return next;
-          });
-          setRackTiles(prev => prev.filter((_, i) => i !== idx));
-          setSelectedTileIndex(null);
+      const key = e.key;
 
-          if (direction === 'across' && col < 14) {
-            setSelectedCell([row, col + 1]);
-          } else if (direction === 'down' && row < 14) {
-            setSelectedCell([row + 1, col]);
-          }
-        }
+      // Letter keys — place on board
+      if (/^[a-zA-Z]$/.test(key) && selectedCell) {
+        e.preventDefault();
+        placeLetter(key.toUpperCase());
+        return;
       }
 
-      if (e.key === 'Backspace' && selectedCell) {
+      // Backspace — remove
+      if (key === 'Backspace') {
+        e.preventDefault();
+        removeLetter();
+        return;
+      }
+
+      // Delete — clear current cell
+      if (key === 'Delete' && selectedCell) {
+        e.preventDefault();
         const [row, col] = selectedCell;
-        const key = `${row}-${col}`;
-        if (newTiles.has(key) && boardTiles[row][col]) {
-          const tile = boardTiles[row][col];
+        if (boardTiles[row][col]) {
+          clearPreview();
           setBoardTiles(prev => {
             const next = prev.map(r => [...r]);
             next[row][col] = null;
             return next;
           });
-          setNewTiles(prev => {
-            const next = new Set(prev);
-            next.delete(key);
-            return next;
-          });
-          setRackTiles(prev => [...prev, tile.letter]);
         }
+        return;
       }
 
-      if (e.key === ' ') {
+      // Space — toggle direction
+      if (key === ' ') {
         e.preventDefault();
-        setDirection(prev => prev === 'across' ? 'down' : 'across');
+        setDirection(d => d === 'across' ? 'down' : 'across');
+        return;
       }
 
       // Arrow keys
       if (selectedCell) {
         const [r, c] = selectedCell;
-        if (e.key === 'ArrowUp' && r > 0) setSelectedCell([r - 1, c]);
-        if (e.key === 'ArrowDown' && r < 14) setSelectedCell([r + 1, c]);
-        if (e.key === 'ArrowLeft' && c > 0) setSelectedCell([r, c - 1]);
-        if (e.key === 'ArrowRight' && c < 14) setSelectedCell([r, c + 1]);
+        if (key === 'ArrowUp' && r > 0) { e.preventDefault(); setSelectedCell([r - 1, c]); }
+        if (key === 'ArrowDown' && r < 14) { e.preventDefault(); setSelectedCell([r + 1, c]); }
+        if (key === 'ArrowLeft' && c > 0) { e.preventDefault(); setSelectedCell([r, c - 1]); }
+        if (key === 'ArrowRight' && c < 14) { e.preventDefault(); setSelectedCell([r, c + 1]); }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedCell, rackTiles, direction, newTiles, boardTiles]);
+  }, [selectedCell, placeLetter, removeLetter, boardTiles, clearPreview]);
 
   return (
     <div className="min-h-screen flex flex-col items-center py-6 px-4">
@@ -224,43 +231,43 @@ function App() {
           Scrabble Solver
         </h1>
         <p className="text-sm text-[--text-secondary] mt-1">
-          Place tiles on the board, then find the best moves
+          Recreate the board state, enter your hand, find the best move
         </p>
       </header>
 
       {/* Main layout */}
       <div className="flex flex-col lg:flex-row gap-8 items-start justify-center w-full max-w-6xl">
-        {/* Board */}
+        {/* Left: Board */}
         <div className="flex-shrink-0">
           <Board
             boardTiles={boardTiles}
-            newTiles={newTiles}
             selectedCell={selectedCell}
             onCellClick={handleCellClick}
           />
-          <p className="text-xs text-[--text-secondary] mt-2 text-center">
-            Click a cell to select it &middot; Space to toggle direction &middot; Type to place tiles
-          </p>
+          <div className="flex items-center justify-between mt-2 px-1">
+            <p className="text-xs text-[--text-secondary]">
+              Click cell, type to place &middot; Space toggles
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-[--bg-secondary] font-semibold">
+                {direction === 'across' ? '\u2192 Across' : '\u2193 Down'}
+              </span>
+            </p>
+          </div>
         </div>
 
-        {/* Side panel */}
-        <div className="flex flex-col items-center gap-6 w-full lg:w-auto">
+        {/* Right: Controls panel */}
+        <div className="flex flex-col items-center gap-5 w-full lg:w-80">
+          {/* Hand */}
           <TileRack
-            tiles={rackTiles}
-            onTileClick={handleTileClick}
-            selectedTileIndex={selectedTileIndex}
+            tiles={handTiles}
+            onTilesChange={setHandTiles}
           />
 
+          {/* Solve + Reset */}
           <Controls
-            rackInput={rackInput}
-            onRackInputChange={setRackInput}
-            onSetRack={handleSetRack}
             onSolve={handleSolve}
-            onClear={handleClearPlaced}
             onClearBoard={handleClearBoard}
             solving={solving}
-            direction={direction}
-            onToggleDirection={() => setDirection(d => d === 'across' ? 'down' : 'across')}
+            hasHand={handTiles.length > 0}
           />
 
           {error && (
@@ -269,7 +276,18 @@ function App() {
             </div>
           )}
 
-          <Results results={results} onSelectResult={handleSelectResult} />
+          {/* Results */}
+          <Results
+            results={results}
+            onSelectResult={handleSelectResult}
+            activeResult={activeResult}
+          />
+
+          {/* Unseen tiles */}
+          <UnseenTiles
+            unseenCounts={unseenCounts}
+            totalUnseen={totalUnseen}
+          />
         </div>
       </div>
     </div>
