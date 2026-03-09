@@ -1,22 +1,17 @@
-export default function Controls({
-  onSolve,
-  onClearBoard,
-  solving,
-  hasHand,
-}) {
+export default function Controls({ onSolve, onClearBoard, solving, hasHand }) {
   return (
-    <div className="flex gap-2 justify-center w-full max-w-md">
+    <div className="flex gap-2 w-full">
       <button
         onClick={onSolve}
         disabled={solving || !hasHand}
-        className="flex-1 px-6 py-3 rounded-lg bg-[--accent] text-white font-semibold text-base
-          hover:bg-[--accent-hover] active:scale-[0.98] transition-all duration-150
-          disabled:opacity-50 disabled:cursor-not-allowed
+        className="flex-1 px-4 py-2.5 rounded bg-[--accent] text-white font-semibold text-sm
+          hover:bg-[--accent-hover] active:scale-[0.98] transition-all duration-100
+          disabled:opacity-40 disabled:cursor-not-allowed
           flex items-center justify-center gap-2"
       >
         {solving ? (
           <>
-            <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <span className="inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             Solving...
           </>
         ) : (
@@ -25,10 +20,11 @@ export default function Controls({
       </button>
       <button
         onClick={onClearBoard}
-        className="px-4 py-3 rounded-lg bg-[--bg-secondary] border border-[#c9a96e]/40
-          font-semibold hover:bg-[#e5ddd0] active:scale-[0.98] transition-all duration-150"
+        className="px-4 py-2.5 rounded bg-white border border-[#ddd] text-sm
+          font-semibold text-[--text-secondary] hover:bg-[--bg-secondary]
+          active:scale-[0.98] transition-all duration-100"
       >
-        Reset All
+        Reset
       </button>
     </div>
   );
